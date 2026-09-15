@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Event Registration Management System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- Unified Authentication Portal -->
+    <section class="auth-page" id="authPage">
+        <div class="auth-shell">
+            <!-- Left Branding Panel -->
+            <div class="auth-panel">
+                <div class="auth-panel-top">
+                    <div class="auth-brand-badge">
+                        <span class="badge-dot"></span> Campus Administration Portal
+                    </div>
+                    <h1>College Event Registration Management</h1>
+                    <p class="auth-panel-desc">A centralized institutional system to organize college events, process student registrations, prevent duplicates, and generate verifiable reports.</p>
+                    
+                    <div class="auth-features-list">
+                        <div class="auth-feature-item">
+                            <span class="auth-feature-icon">✓</span>
+                            <div>
+                                <strong>Event Lifecycle Management</strong>
+                                <span>Create, edit, schedule, and remove campus events with auto-generated codes.</span>
+                            </div>
+                        </div>
+                        <div class="auth-feature-item">
+                            <span class="auth-feature-icon">✓</span>
+                            <div>
+                                <strong>Duplicate-Free Registration</strong>
+                                <span>Fast student lookup by ID and strict single-entry registration guardrails.</span>
+                            </div>
+                        </div>
+                        <div class="auth-feature-item">
+                            <span class="auth-feature-icon">✓</span>
+                            <div>
+                                <strong>Instant Roster Search</strong>
+                                <span>Search in real time across event names, codes, students, and departments.</span>
+                            </div>
+                        </div>
+                        <div class="auth-feature-item">
+                            <span class="auth-feature-icon">✓</span>
+                            <div>
+                                <strong>Official Printable Reports</strong>
+                                <span>Generate and print structured event rosters with date-stamped verification.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="auth-panel-footer">
+                    <div class="auth-footer-badge">
+                        <span>🔒 Local SQLite Database</span>
+                        <span>•</span>
+                        <span>SRS &amp; NFR-01/06 Compliant</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Interactive Auth Card -->
+            <div class="auth-card">
+                <div class="auth-header">
+                    <div class="auth-logo-wrap">
+                        <div class="auth-logo">CE</div>
+                        <div class="auth-tag">Portal Access</div>
+                    </div>
+                    <h2 id="authCardTitle">Welcome Back</h2>
+                    <p class="auth-subtitle" id="authCardSubtitle">Sign in with your authorized administrative credentials</p>
+                </div>
+
+                <!-- Modern Segmented Tab Switcher -->
+                <div class="auth-tabs" role="tablist">
+                    <button type="button" class="auth-tab-btn active" id="tabLogin" role="tab" aria-selected="true">
+                        <span class="tab-icon">🔑</span>
+                        <span>Sign In</span>
+                    </button>
+                    <button type="button" class="auth-tab-btn" id="tabRegister" role="tab" aria-selected="false">
+                        <span class="tab-icon">👤</span>
+                        <span>Create Account</span>
+                    </button>
+                </div>
+
+                <!-- Sign In View -->
+                <div id="loginView" class="auth-view">
+                    <form id="loginForm" autocomplete="on">
+                        <div class="input-group">
+                            <label for="loginUsername">Username</label>
+                            <div class="input-with-icon">
+                                <span class="input-icon">@</span>
+                                <input type="text" id="loginUsername" placeholder="e.g. admin" autocomplete="username" required>
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-top: 16px;">
+                            <div class="label-row">
+                                <label for="loginPassword">Password</label>
+                            </div>
+                            <div class="input-with-icon input-with-action">
+                                <span class="input-icon">🔒</span>
+                                <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
+                                <button type="button" class="password-toggle" data-target="loginPassword" title="Show/Hide Password" aria-label="Toggle password visibility">👁️</button>
+                            </div>
+                        </div>
+                        <div class="form-error hidden" id="loginError"></div>
+                        <button type="submit" class="primary-button full-button" id="loginSubmitBtn">
+                            <span>Sign In to Portal</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+                    </form>
+
+                    <div class="demo-login" id="demoLoginPill" title="Click to auto-fill demo admin credentials">
+                        <div class="demo-badge">QUICK DEMO</div>
+                        <span>Login as <strong>admin</strong> / <strong>admin123</strong> (Click to auto-fill)</span>
+                    </div>
+
+                    <div class="auth-switch">
+                        <span>Need administrator access?</span>
+                        <button type="button" id="showRegister">Create an account</button>
+                    </div>
+                </div>
+
+                <!-- Register Account View -->
+                <div id="registerView" class="auth-view hidden">
+                    <form id="registerForm" autocomplete="on">
+                        <div class="input-group">
+                            <label for="registerName">Full Name</label>
+                            <div class="input-with-icon">
+                                <span class="input-icon">🪪</span>
+                                <input type="text" id="registerName" placeholder="e.g. Dr. Rajesh Sharma" required minlength="2">
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-top: 14px;">
+                            <label for="registerUsername">Username</label>
+                            <div class="input-with-icon">
+                                <span class="input-icon">@</span>
+                                <input type="text" id="registerUsername" placeholder="Min 3 characters" required minlength="3">
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-top: 14px;">
+                            <label for="registerPassword">Password</label>
+                            <div class="input-with-icon input-with-action">
+                                <span class="input-icon">🔒</span>
+                                <input type="password" id="registerPassword" placeholder="Min 6 characters" required minlength="6">
+                                <button type="button" class="password-toggle" data-target="registerPassword" title="Show/Hide Password" aria-label="Toggle password visibility">👁️</button>
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-top: 14px;">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <div class="input-with-icon input-with-action">
+                                <span class="input-icon">🔒</span>
+                                <input type="password" id="confirmPassword" placeholder="Re-enter password" required minlength="6">
+                                <button type="button" class="password-toggle" data-target="confirmPassword" title="Show/Hide Password" aria-label="Toggle password visibility">👁️</button>
+                            </div>
+                        </div>
+                        <div class="form-error hidden" id="registerError"></div>
+                        <button type="submit" class="primary-button full-button" id="registerSubmitBtn">
+                            <span>Create Administrator Account</span>
+                            <span class="btn-arrow">→</span>
+                        </button>
+                    </form>
+
+                    <div class="auth-switch">
+                        <span>Already registered?</span>
+                        <button type="button" id="showLogin">Sign in to existing account</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Dashboard Application -->
+    <div class="app hidden" id="application">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo-area">
+                <div class="logo">CE</div>
+                <div class="logo-text">
+                    <h2>College Events</h2>
+                    <span>Registration System</span>
+                </div>
+            </div>
+            <nav class="navigation">
+                <p class="nav-title">Management</p>
+                <button class="nav-item active" data-section="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-section="events">
+                    <span class="nav-icon">📅</span>
+                    <span>Event Details</span>
+                </button>
+                <button class="nav-item" data-section="registration">
+                    <span class="nav-icon">📝</span>
+                    <span>Event Registration</span>
+                </button>
+                <button class="nav-item" data-section="participants">
+                    <span class="nav-icon">👥</span>
+                    <span>Students &amp; Details</span>
+                </button>
+                <button class="nav-item" data-section="registered">
+                    <span class="nav-icon">📋</span>
+                    <span>Registered List</span>
+                </button>
+                <p class="nav-title">Analysis &amp; Records</p>
+                <button class="nav-item" data-section="search">
+                    <span class="nav-icon">🔍</span>
+                    <span>Search &amp; View</span>
+                </button>
+                <button class="nav-item" data-section="reports">
+                    <span class="nav-icon">📄</span>
+                    <span>Registration Reports</span>
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="logout-button" id="logoutButton">
+                    <span>🚪</span>
+                    <span>Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-button" id="menuButton" aria-label="Toggle navigation">☰</button>
+                    <span class="breadcrumb" id="breadcrumb">Dashboard</span>
+                </div>
+                <div class="header-right">
+                    <div class="status-pill">
+                        <span class="status-dot"></span>
+                        <span>SQLite Live • Port 8000</span>
+                    </div>
+                    <div class="profile">
+                        <div class="profile-avatar" id="profileAvatar">AU</div>
+                        <div class="profile-info">
+                            <strong id="profileName">Authorized User</strong>
+                            <span>System Admin</span>
+                        </div>
+                    </div>
+                    <button class="header-logout-btn" id="headerLogoutBtn" title="Sign out of system">
+                        <span class="logout-icon">🚪</span>
+                        <span>Sign Out</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="page-container">
+                <!-- Section: Dashboard -->
+                <section class="page-section active" id="dashboard">
+                    <div class="page-heading">
+                        <div>
+                            <h1>Dashboard</h1>
+                            <p>Overview of active college events, student records, and registration statistics.</p>
+                        </div>
+                        <button class="primary-button" data-go="events">+ Add New Event</button>
+                    </div>
+
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" data-go="events">📅 Manage Events</button>
+                        <button class="quick-action-btn" data-go="registration">📝 Register Student</button>
+                        <button class="quick-action-btn" data-go="participants">👥 Manage Students</button>
+                        <button class="quick-action-btn" data-go="search">🔍 Quick Search</button>
+                        <button class="quick-action-btn" data-go="reports">📄 View Reports</button>
+                    </div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <div class="summary-card-header">
+                                <span>Total Events</span>
+                                <div class="summary-icon">📅</div>
+                            </div>
+                            <strong id="totalEvents">0</strong>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-card-header">
+                                <span>Total Registrations</span>
+                                <div class="summary-icon">📝</div>
+                            </div>
+                            <strong id="totalRegistrations">0</strong>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-card-header">
+                                <span>Total Students</span>
+                                <div class="summary-icon">👥</div>
+                            </div>
+                            <strong id="totalParticipants">0</strong>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-card-header">
+                                <span>Reports Ready</span>
+                                <div class="summary-icon">📄</div>
+                            </div>
+                            <strong id="totalReports">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2>Upcoming &amp; Recent Events</h2>
+                                <p>Schedule and registration numbers for current college events</p>
+                            </div>
+                            <button class="text-button" data-go="events">View all events →</button>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Event Name</th>
+                                        <th>Date</th>
+                                        <th>Registrations</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboardEventTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Event Details (FR-01) -->
+                <section class="page-section" id="events">
+                    <div class="page-heading">
+                        <div>
+                            <h1>Event Details</h1>
+                            <p>Add, edit, and delete event details (FR-01).</p>
+                        </div>
+                        <button class="primary-button" id="showEventForm">+ Add Event</button>
+                    </div>
+
+                    <!-- Collapsible Event Form Card -->
+                    <div class="card hidden" id="eventFormCard">
+                        <div class="card-header">
+                            <div>
+                                <h2 id="eventFormTitle">New Event</h2>
+                                <p>Provide details for the college event schedule.</p>
+                            </div>
+                        </div>
+                        <form id="eventForm">
+                            <input type="hidden" id="eventId">
+                            <div class="form-grid">
+                                <div class="input-group">
+                                    <label for="eventName">Event Name *</label>
+                                    <input type="text" id="eventName" placeholder="e.g. Annual Tech Symposium" required minlength="2" maxlength="150">
+                                </div>
+                                <div class="input-group">
+                                    <label for="eventDate">Event Date *</label>
+                                    <input type="date" id="eventDate" required>
+                                </div>
+                                <div class="input-group full-width">
+                                    <label for="eventDescription">Event Details / Description</label>
+                                    <input type="text" id="eventDescription" placeholder="e.g. Main Auditorium, 10:00 AM" maxlength="500">
+                                </div>
+                            </div>
+                            <p class="form-error" id="eventError"></p>
+                            <div class="form-actions">
+                                <button type="submit" class="primary-button" id="saveEventBtn">Save Event</button>
+                                <button type="button" class="secondary-button" id="cancelEvent">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Events Table Card -->
+                    <div class="card">
+                        <div class="filter-area">
+                            <div class="search-box">
+                                <input type="text" id="eventSearch" placeholder="Filter events by name, code, or description...">
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Event Name</th>
+                                        <th>Date</th>
+                                        <th>Details</th>
+                                        <th>Registrations</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="eventTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Event Registration (FR-02) -->
+                <section class="page-section" id="registration">
+                    <div class="page-heading">
+                        <div>
+                            <h1>Event Registration</h1>
+                            <p>Register students for available events with duplicate protection (FR-02, NFR-07).</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2>Register a Student</h2>
+                                <p>Entering an existing Student ID will automatically suggest their registered name.</p>
+                            </div>
+                        </div>
+                        <form id="registrationForm">
+                            <div class="form-grid">
+                                <div class="input-group">
+                                    <label for="registrationStudentId">Student ID *</label>
+                                    <input type="text" id="registrationStudentId" placeholder="e.g. STU101" required minlength="2" maxlength="50" autocomplete="off">
+                                    <span class="input-hint" id="studentLookupHint"></span>
+                                </div>
+                                <div class="input-group">
+                                    <label for="registrationStudent">Student Full Name *</label>
+                                    <input type="text" id="registrationStudent" placeholder="e.g. John Doe" required minlength="2" maxlength="120">
+                                </div>
+                                <div class="input-group full-width">
+                                    <label for="registrationEvent">Select Event *</label>
+                                    <select id="registrationEvent" required>
+                                        <option value="">Choose an available event</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p class="form-error" id="registrationError"></p>
+                            <div class="form-actions">
+                                <button type="submit" class="primary-button" id="submitRegistrationBtn">Register Student</button>
+                                <button type="reset" class="secondary-button" id="clearRegistrationBtn">Clear</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Recent Registrations Summary -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2>Recent Registrations</h2>
+                                <p>Latest registered student entries across all events</p>
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Student Name</th>
+                                        <th>Event</th>
+                                        <th>Event Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentRegistrationsTable">
+                                    <tr><td colspan="5" class="empty-cell">Loading recent registrations...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Students & Participants (FR-03) -->
+                <section class="page-section" id="participants">
+                    <div class="page-heading">
+                        <div>
+                            <h1>Students &amp; Participants</h1>
+                            <p>Add, update, and manage student and participant details (FR-03).</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2 id="participantFormTitle">Add Participant Record</h2>
+                                <p>Manage student identity and department/academic details.</p>
+                            </div>
+                        </div>
+
+                        <div id="participantEditBanner" class="edit-banner hidden">
+                            <span>✏️ Editing student details for: <strong id="editingStudentName"></strong></span>
+                            <button type="button" class="text-button" id="cancelStudentEdit" style="color: #92400e;">Cancel Edit</button>
+                        </div>
+
+                        <form id="participantForm">
+                            <input type="hidden" id="participantPk">
+                            <div class="form-grid">
+                                <div class="input-group">
+                                    <label for="participantId">Student ID *</label>
+                                    <input type="text" id="participantId" placeholder="e.g. STU101" required minlength="2" maxlength="50">
+                                </div>
+                                <div class="input-group">
+                                    <label for="participantName">Student Name *</label>
+                                    <input type="text" id="participantName" placeholder="e.g. Priya Sharma" required minlength="2" maxlength="120">
+                                </div>
+                                <div class="input-group full-width">
+                                    <label for="participantDetails">Participant Details / Department</label>
+                                    <input type="text" id="participantDetails" placeholder="e.g. Computer Science, Year 3" maxlength="500">
+                                </div>
+                            </div>
+                            <p class="form-error" id="participantError"></p>
+                            <div class="form-actions">
+                                <button type="submit" class="primary-button" id="participantSubmitBtn">Save Details</button>
+                                <button type="button" class="secondary-button" id="resetParticipantBtn">Clear</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <div class="filter-area">
+                            <div class="search-box">
+                                <input type="text" id="participantSearch" placeholder="Filter students by name, ID, or department...">
+                            </div>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Full Name</th>
+                                        <th>Participant Details / Dept</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="participantTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Registered Participants for Event (FR-04) -->
+                <section class="page-section" id="registered">
+                    <div class="page-heading">
+                        <div>
+                            <h1>Registered Participants</h1>
+                            <p>View registered participants for each event (FR-04).</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="filter-area">
+                            <div class="input-group filter-select">
+                                <label for="registeredEvent">Choose Event</label>
+                                <select id="registeredEvent">
+                                    <option value="">Select an event</option>
+                                </select>
+                            </div>
+                            <button class="primary-button" id="viewParticipants">View Participants</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2>Participant Roster</h2>
+                                <p id="registeredEventTitle">Select an event above to display registered participants.</p>
+                            </div>
+                            <span id="registeredCountBadge" class="status completed hidden">0 Participants</span>
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Student ID</th>
+                                        <th>Student Name</th>
+                                        <th>Department / Details</th>
+                                        <th>Event Name</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="registeredTable">
+                                    <tr><td colspan="6" class="empty-cell">Select an event to view registered participants.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Search & View (FR-05, NFR-01) -->
+                <section class="page-section" id="search">
+                    <div class="page-heading">
+                        <div>
+                            <h1>Search &amp; View</h1>
+                            <p>Search and view event, student, and registration records (FR-05, NFR-01).</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="search-large">
+                            <input type="text" id="globalSearch" placeholder="Search by event title, event code, student name, or student ID..." autocomplete="off">
+                            <button class="primary-button" id="searchButton">Search</button>
+                        </div>
+                        <div class="search-filter-pills" id="searchFilterPills">
+                            <button type="button" class="filter-pill active" data-filter="all">All Results (<span id="countAll">0</span>)</button>
+                            <button type="button" class="filter-pill" data-filter="event">Events (<span id="countEvents">0</span>)</button>
+                            <button type="button" class="filter-pill" data-filter="participant">Students (<span id="countStudents">0</span>)</button>
+                            <button type="button" class="filter-pill" data-filter="registration">Registrations (<span id="countRegistrations">0</span>)</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Name / Title</th>
+                                        <th>Date</th>
+                                        <th>Student ID</th>
+                                        <th>Details / Information</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="searchResults">
+                                    <tr><td colspan="5" class="empty-cell">Enter a search query above to find records.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Registration Reports (FR-06) -->
+                <section class="page-section" id="reports">
+                    <div class="page-heading">
+                        <div>
+                            <h1>Registration Reports</h1>
+                            <p>Generate simple event registration reports (FR-06).</p>
+                        </div>
+                    </div>
+
+                    <div class="card report-controls-card">
+                        <div class="report-controls">
+                            <div class="input-group filter-select">
+                                <label for="reportEvent">Select Event for Report Generation</label>
+                                <select id="reportEvent">
+                                    <option value="">Select an event</option>
+                                </select>
+                            </div>
+                            <button class="primary-button" id="generateReport">Generate Report</button>
+                        </div>
+                        <p class="form-error" id="reportError"></p>
+                    </div>
+
+                    <!-- Printable Report Result Card -->
+                    <div class="card report-card hidden" id="reportResult">
+                        <div class="report-actions-bar">
+                            <button class="secondary-button" id="printReportBtn" type="button">
+                                <span>🖨️</span>
+                                <span>Print / Save as PDF</span>
+                            </button>
+                        </div>
+
+                        <div class="report-header-box">
+                            <div class="report-title-area">
+                                <span class="code-badge" id="reportEventCode">EV-000</span>
+                                <h2 id="reportEventName">Event Report</h2>
+                                <p class="report-meta-text" id="reportEventDetails">College Campus Event</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="status" id="reportEventStatus">Upcoming</span>
+                                <p class="report-meta-text" id="reportGeneratedDate">Generated today</p>
+                            </div>
+                        </div>
+
+                        <div class="report-summary-stats">
+                            <div class="report-stat-item">
+                                <span>Event Name</span>
+                                <strong id="reportEventValue">-</strong>
+                            </div>
+                            <div class="report-stat-item">
+                                <span>Scheduled Date</span>
+                                <strong id="reportEventDateValue">-</strong>
+                            </div>
+                            <div class="report-stat-item">
+                                <span>Total Registered Students</span>
+                                <strong id="reportCount">0</strong>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper" style="padding: 16px;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">#</th>
+                                        <th>Student ID</th>
+                                        <th>Student Name</th>
+                                        <th>Department / Details</th>
+                                        <th>Registration Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Drawer Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
