@@ -11,6 +11,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+
+    <!-- PWA Web App Manifest & Theme Config -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="color-scheme" content="light">
+
+    <!-- Mobile-friendly PWA Standalone Display Capabilities -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EventPortal">
+    <meta name="application-name" content="College Event Registration Management System">
+    <meta name="msapplication-TileColor" content="#1e3a8a">
+    <meta name="msapplication-TileImage" content="/pwa-192x192.png">
+
+    <!-- PWA Favicons & Touch Icons -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 </head>
 <body>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -73,6 +93,14 @@
                     <div class="auth-logo-wrap">
                         <div class="auth-logo">CE</div>
                         <div class="auth-tag">Portal Access</div>
+                        <button type="button" class="auth-install-btn hidden" id="authInstallBtn" title="Install College Event App to device">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Install App</span>
+                        </button>
                     </div>
                     <h2 id="authCardTitle">Welcome Back</h2>
                     <p class="auth-subtitle" id="authCardSubtitle">Sign in with your authorized administrative credentials</p>
@@ -242,6 +270,14 @@
                     <span class="breadcrumb" id="breadcrumb">Dashboard</span>
                 </div>
                 <div class="header-right">
+                    <button class="pwa-install-btn hidden" id="pwaInstallBtn" title="Install College Event App to device or desktop">
+                        <svg class="pwa-install-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Install App</span>
+                    </button>
                     <div class="status-pill" id="realtimeStatusBadge" title="Live real-time database synchronization active">
                         <span class="status-dot pulse" id="realtimeDot"></span>
                         <span id="realtimeStatusText">Live Sync Active</span>
@@ -842,6 +878,52 @@
 
     <!-- Mobile Drawer Overlay -->
     <div class="overlay" id="overlay"></div>
+
+    <!-- PWA Offline Connectivity Indicator -->
+    <div class="offline-indicator hidden" id="offlineIndicator" role="status" aria-live="polite">
+        <span class="offline-dot pulse"></span>
+        <span id="offlineIndicatorText">Offline Mode — Cached data is being used</span>
+    </div>
+
+    <!-- PWA iOS Installation Modal -->
+    <div class="modal hidden" id="iosInstallModal" role="dialog" aria-modal="true" aria-labelledby="iosModalTitle">
+        <div class="modal-card ios-install-card">
+            <div class="modal-header">
+                <div class="modal-icon-badge">📲</div>
+                <div>
+                    <h3 id="iosModalTitle">Install on iPhone or iPad</h3>
+                    <p class="modal-subtitle">Add College Event Portal to your home screen for full standalone experience</p>
+                </div>
+                <button class="modal-close" id="closeIosInstallModal" aria-label="Close guide">✕</button>
+            </div>
+            <div class="ios-install-steps">
+                <div class="ios-step-item">
+                    <div class="ios-step-num">1</div>
+                    <div class="ios-step-content">
+                        <strong>Tap the Safari Share Button</strong>
+                        <span>In Safari's toolbar at the bottom of your iPhone (or top on iPad), tap the Share icon (<svg class="ios-inline-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>).</span>
+                    </div>
+                </div>
+                <div class="ios-step-item">
+                    <div class="ios-step-num">2</div>
+                    <div class="ios-step-content">
+                        <strong>Select "Add to Home Screen"</strong>
+                        <span>Scroll down the share sheet actions and tap <strong>"Add to Home Screen"</strong> (<svg class="ios-inline-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>).</span>
+                    </div>
+                </div>
+                <div class="ios-step-item">
+                    <div class="ios-step-num">3</div>
+                    <div class="ios-step-content">
+                        <strong>Confirm and Launch</strong>
+                        <span>Tap <strong>Add</strong> in the top-right corner. The app icon will appear on your home screen and run standalone with zero browser chrome!</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="primary-button full-button" id="dismissIosInstallModal">Understood</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Supabase Client Library for Realtime Subscriptions -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

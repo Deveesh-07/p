@@ -1395,3 +1395,162 @@ async function restoreSession() {
 
 restoreSession();
 initRealtime();
+
+// ==========================================================================
+// Progressive Web App (PWA) Engine: Service Worker, Install Prompt & Offline
+// ==========================================================================
+
+let deferredInstallPrompt = null;
+const isPwaStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+const isIOSDevice = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+
+function updatePwaInstallVisibility() {
+    const pwaBtn = $("pwaInstallBtn");
+    const authBtn = $("authInstallBtn");
+
+    // Suppress in standalone installed mode
+    if (isPwaStandalone) {
+        if (pwaBtn) pwaBtn.classList.add("hidden");
+        if (authBtn) authBtn.classList.add("hidden");
+        return;
+    }
+
+    // Show when installable prompt was intercepted OR on iOS devices
+    if (deferredInstallPrompt || isIOSDevice) {
+        if (pwaBtn) pwaBtn.classList.remove("hidden");
+        if (authBtn) authBtn.classList.remove("hidden");
+    }
+}
+
+async function handlePwaInstallAction() {
+    if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const choiceResult = await deferredInstallPrompt.userChoice;
+        console.log("[PWA] Install prompt outcome:", choiceResult.outcome);
+        if (choiceResult.outcome === "accepted") {
+            showToast("College Event App installation accepted!");
+        }
+        deferredInstallPrompt = null;
+        updatePwaInstallVisibility();
+    } else if (isIOSDevice) {
+        const iosModal = $("iosInstallModal");
+        if (iosModal) iosModal.classList.remove("hidden");
+    } else {
+        showToast("To install, select 'Install App' or 'Add to Home screen' from your browser menu.");
+    }
+}
+
+function initPwa() {
+    // 1. Register Service Worker with root scope
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker
+                .register("/sw.js", { scope: "/" })
+                .then((registration) => {
+                    console.log("[PWA] Service Worker registered successfully (scope: " + registration.scope + ")");
+
+                    // Detect service worker updates
+                    registration.onupdatefound = () => {
+                        const newWorker = registration.installing;
+                        if (newWorker) {
+                            newWorker.onstatechange = () => {
+                                if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+                                    console.log("[PWA] Application update available.");
+                                    showToast("Application update available. Refresh for latest features.");
+                                }
+                            };
+                        }
+                    };
+                })
+                .catch((err) => {
+                    console.warn("[PWA] Service Worker registration failed:", err);
+                });
+        });
+    }
+
+    // 2. Capture Chromium / Android / Desktop BeforeInstallPromptEvent
+    window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        console.log("[PWA] beforeinstallprompt event captured and ready for in-app trigger.");
+        updatePwaInstallVisibility();
+    });
+
+    // 3. Handle App Installed Event
+    window.addEventListener("appinstalled", () => {
+        console.log("[PWA] Application successfully installed into system launcher.");
+        deferredInstallPrompt = null;
+        updatePwaInstallVisibility();
+        showToast("College Event App installed to your device!");
+    });
+
+    // 4. Attach Install Button Event Listeners
+    const pwaBtn = $("pwaInstallBtn");
+    if (pwaBtn) {
+        pwaBtn.addEventListener("click", handlePwaInstallAction);
+    }
+
+    const authBtn = $("authInstallBtn");
+    if (authBtn) {
+        authBtn.addEventListener("click", handlePwaInstallAction);
+    }
+
+    // 5. iOS Install Modal Dismissal
+    const closeIosBtn = $("closeIosInstallModal");
+    if (closeIosBtn) {
+        closeIosBtn.addEventListener("click", () => {
+            $("iosInstallModal")?.classList.add("hidden");
+        });
+    }
+
+    const dismissIosBtn = $("dismissIosInstallModal");
+    if (dismissIosBtn) {
+        dismissIosBtn.addEventListener("click", () => {
+            $("iosInstallModal")?.classList.add("hidden");
+        });
+    }
+
+    // Close on backdrop click
+    const iosModal = $("iosInstallModal");
+    if (iosModal) {
+        iosModal.addEventListener("click", (e) => {
+            if (e.target === iosModal) {
+                iosModal.classList.add("hidden");
+            }
+        });
+    }
+
+    // 6. Online / Offline Connectivity Detection
+    function handleConnectivityChange() {
+        const offlineIndicator = $("offlineIndicator");
+        if (!navigator.onLine) {
+            if (offlineIndicator) offlineIndicator.classList.remove("hidden");
+            showToast("Offline Mode: Device disconnected. Serving cached records.");
+        } else {
+            if (offlineIndicator && !offlineIndicator.classList.contains("hidden")) {
+                offlineIndicator.classList.add("hidden");
+                showToast("Connection restored. Synchronizing live campus events...");
+                if (getToken()) {
+                    refreshData();
+                }
+            }
+        }
+    }
+
+    window.addEventListener("online", handleConnectivityChange);
+    window.addEventListener("offline", handleConnectivityChange);
+
+    // Initial online state check
+    if (!navigator.onLine) {
+        const offlineIndicator = $("offlineIndicator");
+        if (offlineIndicator) offlineIndicator.classList.remove("hidden");
+    }
+
+    // Check initial install button visibility
+    updatePwaInstallVisibility();
+}
+
+initPwa();
+

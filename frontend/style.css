@@ -2195,3 +2195,232 @@ tbody tr:hover {
     }
 }
 
+/* ==========================================================================
+   Progressive Web App (PWA) & Standalone Display Mode Styles
+   ========================================================================== */
+
+/* PWA In-App Install Buttons */
+.pwa-install-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(30, 58, 138, 0.25);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+.pwa-install-btn:hover {
+    background: linear-gradient(135deg, var(--primary-hover) 0%, #1e40af 100%);
+    box-shadow: 0 3px 8px rgba(30, 58, 138, 0.35);
+    transform: translateY(-1px);
+}
+
+.pwa-install-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.pwa-install-icon {
+    flex-shrink: 0;
+    animation: bounceSubtle 2.4s ease-in-out infinite;
+}
+
+@keyframes bounceSubtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+}
+
+/* Auth Page Install Pill */
+.auth-install-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 5px 12px;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--primary-border);
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.auth-install-btn:hover {
+    background: #dbeafe;
+    color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+/* PWA Offline Connectivity Indicator */
+.offline-indicator {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 999;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
+    animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: calc(100vw - 48px);
+}
+
+.offline-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+    flex-shrink: 0;
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* iOS Install Guide Modal */
+.ios-install-card {
+    max-width: 480px;
+}
+
+.ios-install-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 20px 0 24px 0;
+}
+
+.ios-step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--slate-50);
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-sm);
+}
+
+.ios-step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.ios-step-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.ios-step-content strong {
+    font-size: 14px;
+    color: var(--slate-800);
+}
+
+.ios-step-content span {
+    font-size: 13px;
+    color: var(--slate-600);
+    line-height: 1.5;
+}
+
+.ios-inline-icon {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0 2px;
+    color: var(--primary);
+}
+
+/* Standalone Display Mode Enhancements */
+@media all and (display-mode: standalone) {
+    /* Hide in-app install buttons when running installed */
+    .pwa-install-btn,
+    .auth-install-btn {
+        display: none !important;
+    }
+
+    /* Provide iOS status bar notch safe margins */
+    .header {
+        padding-top: max(16px, env(safe-area-inset-top));
+    }
+
+    .sidebar {
+        padding-top: max(20px, env(safe-area-inset-top));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+
+    body {
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    input, textarea, select, [contenteditable="true"] {
+        user-select: text;
+        -webkit-user-select: text;
+    }
+}
+
+/* Mobile Responsiveness for PWA UI */
+@media (max-width: 800px) {
+    .pwa-install-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .pwa-install-label {
+        display: inline-block;
+    }
+
+    .offline-indicator {
+        bottom: 16px;
+        left: 16px;
+        right: 16px;
+        font-size: 12px;
+        padding: 8px 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pwa-install-btn .pwa-install-label {
+        display: none;
+    }
+
+    .pwa-install-btn {
+        padding: 8px 10px;
+        min-height: 38px;
+    }
+}
+

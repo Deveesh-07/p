@@ -1344,6 +1344,20 @@ setInterval(() => {
   }
 }, 25000);
 
+// Frontend PWA Service Worker and Manifest explicit routes
+app.get("/sw.js", (_req: Request, res: Response) => {
+  res.setHeader("Content-Type", "application/javascript");
+  res.setHeader("Service-Worker-Allowed", "/");
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.sendFile(path.join(FRONTEND_DIR, "sw.js"));
+});
+
+app.get(["/manifest.webmanifest", "/manifest.json"], (_req: Request, res: Response) => {
+  res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.sendFile(path.join(FRONTEND_DIR, "manifest.webmanifest"));
+});
+
 // Frontend Static File Serving
 app.use(express.static(FRONTEND_DIR));
 
