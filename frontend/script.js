@@ -1316,9 +1316,18 @@ async function initRealtime() {
                         triggerRealtimeSync("students", payload.eventType, payload.new || payload.old);
                     })
                     .subscribe((status) => {
-                        console.log(`[Supabase Realtime] Channel status: ${status}`);
                         if (status === "SUBSCRIBED") {
+                            console.log("[Supabase Realtime] Browser channel subscribed successfully");
                             updateRealtimeBadge("active", "Supabase Realtime Live");
+                        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                            console.info(`[Supabase Realtime] Channel inactive (${status}). Active sync: Live SSE Stream.`);
+                            try {
+                                if (realtimeChannel && supabaseClient) {
+                                    supabaseClient.removeChannel(realtimeChannel);
+                                    realtimeChannel = null;
+                                }
+                            } catch (_) {}
+                            updateRealtimeBadge("active", "Live Sync Active");
                         }
                     });
             }

@@ -130,15 +130,21 @@ export function broadcastRealtimeEvent(table: string, eventType: string, record:
 }
 
 let supabase: SupabaseClient | null = null;
-if (supabaseUrl && supabaseKey) {
-  try {
-    supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    });
-    console.log(`[Database] Initialized Supabase PostgreSQL connection: ${supabaseUrl}`);
+let serverRealtimeChannel: any = null;
+let serverRealtimeRetryTimeout: NodeJS.Timeout | null = null;
 
-    // Setup Supabase Realtime channel subscription for live database changes
-    supabase
+function setupServerRealtime() {
+  if (!supabase) return;
+
+  if (serverRealtimeChannel) {
+    try {
+      supabase.removeChannel(serverRealtimeChannel);
+    } catch {}
+    serverRealtimeChannel = null;
+  }
+
+  try {
+    serverRealtimeChannel = supabase
       .channel("server-realtime-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "events" }, (payload) => {
         console.log(`[Supabase Realtime] postgres_changes on events: ${payload.eventType}`);
@@ -152,9 +158,41 @@ if (supabaseUrl && supabaseKey) {
         console.log(`[Supabase Realtime] postgres_changes on students: ${payload.eventType}`);
         broadcastRealtimeEvent("students", payload.eventType, payload.new || payload.old);
       })
-      .subscribe((status) => {
-        console.log(`[Supabase Realtime] Server subscription status: ${status}`);
+      .subscribe((status, err) => {
+        if (status === "SUBSCRIBED") {
+          console.log("[Supabase Realtime] Server subscription active and listening for database changes");
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.info(`[Supabase Realtime] Subscription status: ${status}. Fallback live sync active via SSE.`);
+          if (serverRealtimeChannel) {
+            try {
+              supabase?.removeChannel(serverRealtimeChannel);
+            } catch {}
+            serverRealtimeChannel = null;
+          }
+          if (!serverRealtimeRetryTimeout) {
+            serverRealtimeRetryTimeout = setTimeout(() => {
+              serverRealtimeRetryTimeout = null;
+              setupServerRealtime();
+            }, 8000);
+          }
+        } else if (status === "CLOSED") {
+          console.log("[Supabase Realtime] Server subscription closed");
+        }
       });
+  } catch (err: any) {
+    console.info(`[Supabase Realtime] Note on realtime initialization: ${err.message}`);
+  }
+}
+
+if (supabaseUrl && supabaseKey) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+    });
+    console.log(`[Database] Initialized Supabase PostgreSQL connection: ${supabaseUrl}`);
+
+    // Setup Supabase Realtime channel subscription for live database changes
+    setupServerRealtime();
   } catch (err: any) {
     console.warn(`[Database] Failed to initialize Supabase client: ${err.message}. Using local storage fallback.`);
   }
