@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>College Event Registration Management System</title>
+    <meta name="description" content="College Event Registration Management System with Supabase PostgreSQL database integration, Supabase Realtime live sync listeners, event lifecycle management, duplicate prevention, and reporting.">
+    <meta property="og:title" content="College Event Registration Management System">
+    <meta property="og:description" content="College Event Registration Management System with Supabase PostgreSQL database integration, Supabase Realtime live sync listeners, event lifecycle management, duplicate prevention, and reporting.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -57,9 +60,9 @@
                 </div>
                 <div class="auth-panel-footer">
                     <div class="auth-footer-badge">
-                        <span>🔒 Local SQLite Database</span>
+                        <span>⚡ Supabase PostgreSQL &amp; Realtime</span>
                         <span>•</span>
-                        <span>SRS &amp; NFR-01/06 Compliant</span>
+                        <span>Live Synchronization Active</span>
                     </div>
                 </div>
             </div>
@@ -208,6 +211,10 @@
                     <span>Registered List</span>
                 </button>
                 <p class="nav-title">Analysis &amp; Records</p>
+                <button class="nav-item" data-section="aiAssistant" id="navAiAssistant">
+                    <span class="nav-icon">🤖</span>
+                    <span>AI Assistant</span>
+                </button>
                 <button class="nav-item" data-section="search">
                     <span class="nav-icon">🔍</span>
                     <span>Search &amp; View</span>
@@ -234,9 +241,9 @@
                     <span class="breadcrumb" id="breadcrumb">Dashboard</span>
                 </div>
                 <div class="header-right">
-                    <div class="status-pill">
-                        <span class="status-dot"></span>
-                        <span>SQLite Live • Port 8000</span>
+                    <div class="status-pill" id="realtimeStatusBadge" title="Live real-time database synchronization active">
+                        <span class="status-dot pulse" id="realtimeDot"></span>
+                        <span id="realtimeStatusText">Live Sync Active</span>
                     </div>
                     <div class="profile">
                         <div class="profile-avatar" id="profileAvatar">AU</div>
@@ -267,6 +274,7 @@
                         <button class="quick-action-btn" data-go="events">📅 Manage Events</button>
                         <button class="quick-action-btn" data-go="registration">📝 Register Student</button>
                         <button class="quick-action-btn" data-go="participants">👥 Manage Students</button>
+                        <button class="quick-action-btn" data-go="aiAssistant">🤖 AI Analysis</button>
                         <button class="quick-action-btn" data-go="search">🔍 Quick Search</button>
                         <button class="quick-action-btn" data-go="reports">📄 View Reports</button>
                     </div>
@@ -697,6 +705,136 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Section: AI Assistant for Analyzing Management Data -->
+                <section class="page-section" id="aiAssistant">
+                    <div class="page-heading">
+                        <div>
+                            <h1>AI Management Assistant</h1>
+                            <p>Automated intelligence, attendance forecasting, department trends, and executive briefings powered by Gemini.</p>
+                        </div>
+                        <button class="primary-button" id="runFullAiAnalysisBtn" type="button">
+                            <span>⚡ Run Full Analysis</span>
+                        </button>
+                    </div>
+
+                    <!-- Prompt Presets & Inquiry Card -->
+                    <div class="card ai-presets-card">
+                        <div class="ai-presets-header">
+                            <span class="ai-badge">✨ Analytical Focus Areas</span>
+                            <p>Select a pre-configured institutional inquiry or type your custom management question below:</p>
+                        </div>
+                        <div class="ai-chip-grid" id="aiChipGrid">
+                            <button type="button" class="ai-prompt-chip active" data-prompt="Provide a comprehensive executive summary of all college events, enrollment health, and capacity.">
+                                <span class="chip-icon">📊</span>
+                                <span>Executive Event Summary</span>
+                            </button>
+                            <button type="button" class="ai-prompt-chip" data-prompt="Analyze student registration distribution by department and identify engagement gaps.">
+                                <span class="chip-icon">🏛️</span>
+                                <span>Department Participation</span>
+                            </button>
+                            <button type="button" class="ai-prompt-chip" data-prompt="Identify upcoming events that need promotional intervention or have low registration counts.">
+                                <span class="chip-icon">⚠️</span>
+                                <span>Low Enrollment Alerts</span>
+                            </button>
+                            <button type="button" class="ai-prompt-chip" data-prompt="Evaluate completed events versus upcoming events and provide strategic planning recommendations.">
+                                <span class="chip-icon">📈</span>
+                                <span>Lifecycle &amp; Planning</span>
+                            </button>
+                        </div>
+
+                        <!-- Custom Inquiry Input Form -->
+                        <form id="aiInquiryForm" class="ai-inquiry-box">
+                            <div class="input-with-icon full-width">
+                                <span class="input-icon">💬</span>
+                                <input type="text" id="aiCustomQuery" placeholder="Ask anything about event attendance, student participation, or scheduling..." autocomplete="off">
+                            </div>
+                            <button type="submit" class="primary-button" id="aiSubmitQueryBtn">
+                                <span>Analyze</span>
+                                <span class="btn-arrow">→</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Analysis Output Container -->
+                    <div class="card ai-result-card" id="aiResultContainer">
+                        <!-- Initial Empty State -->
+                        <div class="ai-empty-state" id="aiEmptyState">
+                            <div class="ai-empty-icon">🤖</div>
+                            <h3>Ready to Analyze Management Data</h3>
+                            <p>Select an analytical focus above or click <strong>"Run Full Analysis"</strong> to generate real-time AI insights across your campus events, students, and registrations.</p>
+                            <div class="ai-empty-hint">
+                                <span>💡 Tip: Real-time Supabase records are automatically fed to the AI model on each run.</span>
+                            </div>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div class="ai-loading-state hidden" id="aiLoadingState">
+                            <div class="ai-spinner"></div>
+                            <h3 id="aiLoadingStep">Aggregating live database records...</h3>
+                            <p class="ai-loading-sub" id="aiLoadingSub">Gemini is synthesizing event participation metrics, department distributions, and operational recommendations.</p>
+                            <div class="ai-loading-progress-bar">
+                                <div class="ai-loading-progress-fill" id="aiLoadingProgress"></div>
+                            </div>
+                        </div>
+
+                        <!-- Error State -->
+                        <div class="ai-error-state hidden" id="aiErrorState">
+                            <div class="ai-error-icon">⚠️</div>
+                            <h3 id="aiErrorMessage">Unable to generate analysis</h3>
+                            <p id="aiErrorDetail">An error occurred while communicating with the AI service.</p>
+                            <button type="button" class="secondary-button" id="aiRetryBtn">
+                                <span>🔄 Retry Analysis</span>
+                            </button>
+                        </div>
+
+                        <!-- Results View -->
+                        <div class="ai-content-view hidden" id="aiContentView">
+                            <div class="ai-content-toolbar">
+                                <div class="ai-query-tag">
+                                    <span class="tag-label">Inquiry:</span>
+                                    <strong id="aiActiveQueryLabel">Executive Summary</strong>
+                                </div>
+                                <div class="ai-action-buttons">
+                                    <span class="ai-timestamp" id="aiTimestampBadge">Generated just now</span>
+                                    <button type="button" class="secondary-button btn-sm" id="copyAiAnalysisBtn" title="Copy report to clipboard">
+                                        <span>📋 Copy</span>
+                                    </button>
+                                    <button type="button" class="secondary-button btn-sm" id="printAiAnalysisBtn" title="Print this analysis">
+                                        <span>🖨️ Print</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Live Key Metrics Quick Bar -->
+                            <div class="ai-metrics-bar" id="aiMetricsBar">
+                                <div class="ai-metric-pill">
+                                    <span class="metric-num" id="aiMetricEvents">0</span>
+                                    <span class="metric-lbl">Total Events</span>
+                                </div>
+                                <div class="ai-metric-pill">
+                                    <span class="metric-num" id="aiMetricUpcoming">0</span>
+                                    <span class="metric-lbl">Upcoming</span>
+                                </div>
+                                <div class="ai-metric-pill">
+                                    <span class="metric-num" id="aiMetricCompleted">0</span>
+                                    <span class="metric-lbl">Completed</span>
+                                </div>
+                                <div class="ai-metric-pill">
+                                    <span class="metric-num" id="aiMetricStudents">0</span>
+                                    <span class="metric-lbl">Students</span>
+                                </div>
+                                <div class="ai-metric-pill">
+                                    <span class="metric-num" id="aiMetricRegistrations">0</span>
+                                    <span class="metric-lbl">Registrations</span>
+                                </div>
+                            </div>
+
+                            <!-- Formatted Analysis Prose Output -->
+                            <div class="ai-analysis-prose" id="aiAnalysisProse"></div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
@@ -704,6 +842,8 @@
     <!-- Mobile Drawer Overlay -->
     <div class="overlay" id="overlay"></div>
 
+    <!-- Supabase Client Library for Realtime Subscriptions -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
 </body>
 </html>

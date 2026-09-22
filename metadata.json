@@ -1,0 +1,8 @@
+{
+  "name": "College Event Registration Management System",
+  "description": "College Event Registration Management System with Supabase PostgreSQL database integration, Supabase Realtime live sync listeners, event lifecycle management, duplicate prevention, and reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

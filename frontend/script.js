@@ -74,12 +74,7 @@ function clearSession() {
     sessionStorage.removeItem(USER_KEY);
 }
 
-const API_BASE = (function() {
-    if (typeof window !== "undefined" && window.location.hostname && window.location.port === "8000") {
-        return "";
-    }
-    return "http://127.0.0.1:8000";
-})();
+const API_BASE = "";
 
 async function api(path, options = {}) {
     const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
@@ -95,7 +90,7 @@ async function api(path, options = {}) {
     try {
         response = await fetch(url, { ...options, headers });
     } catch (networkErr) {
-        throw new Error("Cannot connect to server at http://127.0.0.1:8000. Please ensure backend is running.");
+        throw new Error("Cannot connect to server. Please ensure backend is running.");
     }
     let data = null;
     try {
@@ -388,6 +383,7 @@ $("loginForm").addEventListener("submit", async (event) => {
         showApp(data.user);
         showSection("dashboard");
         await refreshData();
+        initRealtime();
         showToast(`Welcome back, ${data.user.full_name}!`);
     } catch (error) {
         setError("loginError", error.message);
@@ -955,6 +951,411 @@ if (printBtn) {
     });
 }
 
+// --- AI Management Assistant Module (Powered by Gemini) ---
+let lastAiQuery = "";
+let aiLoadingInterval = null;
+
+function renderInlineMarkdown(escapedText) {
+    return escapedText
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.+?)\*/g, "<em>$1</em>")
+        .replace(/`(.+?)`/g, "<code>$1</code>");
+}
+
+function formatAiMarkdown(text) {
+    if (!text) return "";
+    const lines = text.split("\n");
+    let html = "";
+    let inList = false;
+    let listType = "ul";
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        if (!line) {
+            if (inList) {
+                html += `</${listType}>`;
+                inList = false;
+            }
+            continue;
+        }
+
+        if (line === "---" || line === "***" || line === "___") {
+            if (inList) { html += `</${listType}>`; inList = false; }
+            html += "<hr>";
+            continue;
+        }
+
+        if (line.startsWith("#### ")) {
+            if (inList) { html += `</${listType}>`; inList = false; }
+            html += `<h4>${renderInlineMarkdown(escapeHtml(line.slice(5)))}</h4>`;
+            continue;
+        }
+        if (line.startsWith("### ")) {
+            if (inList) { html += `</${listType}>`; inList = false; }
+            html += `<h3>${renderInlineMarkdown(escapeHtml(line.slice(4)))}</h3>`;
+            continue;
+        }
+        if (line.startsWith("## ")) {
+            if (inList) { html += `</${listType}>`; inList = false; }
+            html += `<h2>${renderInlineMarkdown(escapeHtml(line.slice(3)))}</h2>`;
+            continue;
+        }
+        if (line.startsWith("# ")) {
+            if (inList) { html += `</${listType}>`; inList = false; }
+            html += `<h2>${renderInlineMarkdown(escapeHtml(line.slice(2)))}</h2>`;
+            continue;
+        }
+
+        const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+        if (bulletMatch) {
+            if (!inList || listType !== "ul") {
+                if (inList) html += `</${listType}>`;
+                html += "<ul>";
+                inList = true;
+                listType = "ul";
+            }
+            html += `<li>${renderInlineMarkdown(escapeHtml(bulletMatch[1]))}</li>`;
+            continue;
+        }
+
+        const numMatch = line.match(/^\d+\.\s+(.*)$/);
+        if (numMatch) {
+            if (!inList || listType !== "ol") {
+                if (inList) html += `</${listType}>`;
+                html += "<ol>";
+                inList = true;
+                listType = "ol";
+            }
+            html += `<li>${renderInlineMarkdown(escapeHtml(numMatch[1]))}</li>`;
+            continue;
+        }
+
+        if (inList) {
+            html += `</${listType}>`;
+            inList = false;
+        }
+
+        if (line.startsWith("> ")) {
+            html += `<blockquote>${renderInlineMarkdown(escapeHtml(line.slice(2)))}</blockquote>`;
+            continue;
+        }
+
+        html += `<p>${renderInlineMarkdown(escapeHtml(line))}</p>`;
+    }
+
+    if (inList) {
+        html += `</${listType}>`;
+    }
+
+    return html;
+}
+
+async function runAiAnalysis(query, focusArea) {
+    const finalQuery = (query || "").trim() || "Provide a comprehensive executive summary of all college events, enrollment health, and capacity.";
+    lastAiQuery = finalQuery;
+
+    const emptyState = $("aiEmptyState");
+    const loadingState = $("aiLoadingState");
+    const errorState = $("aiErrorState");
+    const contentView = $("aiContentView");
+    const submitBtn = $("aiSubmitQueryBtn");
+    const runAllBtn = $("runFullAiAnalysisBtn");
+
+    if (emptyState) emptyState.classList.add("hidden");
+    if (errorState) errorState.classList.add("hidden");
+    if (contentView) contentView.classList.add("hidden");
+    if (loadingState) loadingState.classList.remove("hidden");
+
+    if (submitBtn) submitBtn.disabled = true;
+    if (runAllBtn) runAllBtn.disabled = true;
+
+    const loadingSteps = [
+        "Aggregating live PostgreSQL database records...",
+        "Evaluating event participation & capacity ratios...",
+        "Analyzing student enrollment across departments...",
+        "Synthesizing institutional management intelligence with Gemini..."
+    ];
+    let stepIndex = 0;
+    const loadingStepEl = $("aiLoadingStep");
+    if (loadingStepEl) loadingStepEl.textContent = loadingSteps[0];
+
+    if (aiLoadingInterval) clearInterval(aiLoadingInterval);
+    aiLoadingInterval = setInterval(() => {
+        stepIndex = (stepIndex + 1) % loadingSteps.length;
+        if (loadingStepEl) loadingStepEl.textContent = loadingSteps[stepIndex];
+    }, 2200);
+
+    try {
+        const response = await api("/api/ai/analyze", {
+            method: "POST",
+            body: JSON.stringify({ query: finalQuery, focusArea }),
+        });
+
+        if (aiLoadingInterval) {
+            clearInterval(aiLoadingInterval);
+            aiLoadingInterval = null;
+        }
+
+        if (loadingState) loadingState.classList.add("hidden");
+
+        if (response.metrics) {
+            if ($("aiMetricEvents")) $("aiMetricEvents").textContent = response.metrics.events ?? 0;
+            if ($("aiMetricUpcoming")) $("aiMetricUpcoming").textContent = response.metrics.upcoming ?? 0;
+            if ($("aiMetricCompleted")) $("aiMetricCompleted").textContent = response.metrics.completed ?? 0;
+            if ($("aiMetricStudents")) $("aiMetricStudents").textContent = response.metrics.students ?? 0;
+            if ($("aiMetricRegistrations")) $("aiMetricRegistrations").textContent = response.metrics.registrations ?? 0;
+        }
+
+        if ($("aiActiveQueryLabel")) {
+            $("aiActiveQueryLabel").textContent = finalQuery;
+        }
+        if ($("aiTimestampBadge")) {
+            const now = new Date();
+            $("aiTimestampBadge").textContent = `Generated ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
+        }
+
+        if ($("aiAnalysisProse")) {
+            $("aiAnalysisProse").innerHTML = formatAiMarkdown(response.analysis || "");
+        }
+
+        if (contentView) {
+            contentView.classList.remove("hidden");
+            contentView.scrollIntoView({ behavior: "smooth" });
+        }
+        showToast("AI Management Analysis generated successfully!");
+    } catch (err) {
+        if (aiLoadingInterval) {
+            clearInterval(aiLoadingInterval);
+            aiLoadingInterval = null;
+        }
+        if (loadingState) loadingState.classList.add("hidden");
+        if (errorState) {
+            errorState.classList.remove("hidden");
+            if ($("aiErrorMessage")) $("aiErrorMessage").textContent = "Analysis Unavailable";
+            if ($("aiErrorDetail")) $("aiErrorDetail").textContent = err.message || "An unexpected error occurred while communicating with the AI service.";
+        }
+        showToast(err.message || "Failed to generate AI analysis", true);
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        if (runAllBtn) runAllBtn.disabled = false;
+    }
+}
+
+// Attach AI Assistant event listeners
+const runFullAiBtn = $("runFullAiAnalysisBtn");
+if (runFullAiBtn) {
+    runFullAiBtn.addEventListener("click", () => {
+        const queryInput = $("aiCustomQuery");
+        const query = queryInput ? queryInput.value.trim() : "";
+        runAiAnalysis(query);
+    });
+}
+
+const aiInquiryForm = $("aiInquiryForm");
+if (aiInquiryForm) {
+    aiInquiryForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const query = ($("aiCustomQuery")?.value || "").trim();
+        if (!query) {
+            showToast("Please enter an analytical question or choose a preset prompt.");
+            return;
+        }
+        runAiAnalysis(query);
+    });
+}
+
+const aiChipGrid = $("aiChipGrid");
+if (aiChipGrid) {
+    aiChipGrid.addEventListener("click", (e) => {
+        const chip = e.target.closest(".ai-prompt-chip");
+        if (!chip) return;
+        aiChipGrid.querySelectorAll(".ai-prompt-chip").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        const prompt = chip.dataset.prompt;
+        if ($("aiCustomQuery")) {
+            $("aiCustomQuery").value = prompt;
+        }
+        runAiAnalysis(prompt);
+    });
+}
+
+const copyAiBtn = $("copyAiAnalysisBtn");
+if (copyAiBtn) {
+    copyAiBtn.addEventListener("click", async () => {
+        const prose = $("aiAnalysisProse");
+        if (!prose) return;
+        try {
+            await navigator.clipboard.writeText(prose.innerText);
+            showToast("Analysis briefing copied to clipboard!");
+        } catch {
+            showToast("Unable to copy to clipboard automatically.");
+        }
+    });
+}
+
+const printAiBtn = $("printAiAnalysisBtn");
+if (printAiBtn) {
+    printAiBtn.addEventListener("click", () => {
+        window.print();
+    });
+}
+
+const aiRetryBtn = $("aiRetryBtn");
+if (aiRetryBtn) {
+    aiRetryBtn.addEventListener("click", () => {
+        runAiAnalysis(lastAiQuery);
+    });
+}
+
+// --- Supabase Realtime & Live Sync Engine ---
+let supabaseClient = null;
+let realtimeChannel = null;
+let sseConnection = null;
+let realtimeDebounceTimer = null;
+
+function highlightElement(el) {
+    if (!el) return;
+    el.classList.remove("pulse-highlight");
+    void el.offsetWidth; // Force CSS reflow
+    el.classList.add("pulse-highlight");
+    window.setTimeout(() => {
+        el.classList.remove("pulse-highlight");
+    }, 1800);
+}
+
+function updateRealtimeBadge(status, labelText) {
+    const badge = $("realtimeStatusBadge");
+    const dot = $("realtimeDot");
+    const text = $("realtimeStatusText");
+    if (!badge || !dot || !text) return;
+
+    text.textContent = labelText;
+    if (status === "active") {
+        badge.classList.remove("syncing");
+        dot.className = "status-dot pulse";
+    } else if (status === "syncing") {
+        badge.classList.add("syncing");
+        dot.className = "status-dot";
+    }
+}
+
+async function triggerRealtimeSync(table, eventType, record) {
+    if (realtimeDebounceTimer) {
+        clearTimeout(realtimeDebounceTimer);
+    }
+
+    updateRealtimeBadge("syncing", "Syncing updates...");
+
+    realtimeDebounceTimer = setTimeout(async () => {
+        if (!getToken()) return;
+
+        try {
+            await refreshData();
+            updateRealtimeBadge("active", supabaseClient ? "Supabase Realtime Live" : "Live Sync Active");
+
+            // Visually highlight updated UI components and dashboard stats
+            if (table === "events") {
+                const totalEventsCard = $("totalEvents")?.closest(".summary-card");
+                highlightElement(totalEventsCard);
+                highlightElement($("dashboardEventTable"));
+                highlightElement($("eventTable"));
+                showToast(`Live update: Event table modified (${eventType || "sync"}).`);
+            } else if (table === "registrations") {
+                const totalRegCard = $("totalRegistrations")?.closest(".summary-card");
+                highlightElement(totalRegCard);
+                highlightElement($("dashboardEventTable"));
+                highlightElement($("recentRegistrationsTable"));
+                showToast(`Live update: Event registrations synchronized in real-time.`);
+            } else if (table === "students") {
+                const totalParticipantsCard = $("totalParticipants")?.closest(".summary-card");
+                highlightElement(totalParticipantsCard);
+                highlightElement($("participantTable"));
+                showToast("Live update: Student participant directory synchronized.");
+            }
+        } catch (err) {
+            console.error("[Realtime] Sync error:", err);
+            updateRealtimeBadge("active", "Live Sync Active");
+        }
+    }, 150);
+}
+
+function normalizeSupabaseUrl(url) {
+    if (!url) return "";
+    return String(url).trim().replace(/\/rest\/v1\/?$/i, "").replace(/\/+$/, "");
+}
+
+async function initRealtime() {
+    // 1. Check Supabase credentials for client-side WebSocket subscription
+    try {
+        const config = await api("/api/config");
+        const cleanUrl = normalizeSupabaseUrl(config && config.supabaseUrl);
+        if (cleanUrl && config.supabaseAnonKey && window.supabase) {
+            if (!supabaseClient) {
+                supabaseClient = window.supabase.createClient(cleanUrl, config.supabaseAnonKey);
+                console.log("[Supabase Realtime] Initializing browser WebSocket subscriptions on:", cleanUrl);
+
+                realtimeChannel = supabaseClient.channel("supabase_realtime_events")
+                    .on("postgres_changes", { event: "*", schema: "public", table: "events" }, (payload) => {
+                        console.log("[Supabase Realtime] Event table postgres_changes:", payload);
+                        triggerRealtimeSync("events", payload.eventType, payload.new || payload.old);
+                    })
+                    .on("postgres_changes", { event: "*", schema: "public", table: "registrations" }, (payload) => {
+                        console.log("[Supabase Realtime] Registration table postgres_changes:", payload);
+                        triggerRealtimeSync("registrations", payload.eventType, payload.new || payload.old);
+                    })
+                    .on("postgres_changes", { event: "*", schema: "public", table: "students" }, (payload) => {
+                        console.log("[Supabase Realtime] Student table postgres_changes:", payload);
+                        triggerRealtimeSync("students", payload.eventType, payload.new || payload.old);
+                    })
+                    .subscribe((status) => {
+                        console.log(`[Supabase Realtime] Channel status: ${status}`);
+                        if (status === "SUBSCRIBED") {
+                            updateRealtimeBadge("active", "Supabase Realtime Live");
+                        }
+                    });
+            }
+        } else {
+            updateRealtimeBadge("active", "Live Sync Active");
+        }
+    } catch (err) {
+        console.warn("[Realtime] Supabase config check:", err.message);
+        updateRealtimeBadge("active", "Live Sync Active");
+    }
+
+    // 2. Also establish Server-Sent Events stream as instant synchronized listener
+    initServerEventsStream();
+}
+
+function initServerEventsStream() {
+    if (sseConnection) {
+        sseConnection.close();
+    }
+    try {
+        sseConnection = new EventSource("/api/realtime");
+        sseConnection.onopen = () => {
+            if (!supabaseClient) {
+                updateRealtimeBadge("active", "Live Sync Active");
+            }
+        };
+        sseConnection.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data && data.table) {
+                    triggerRealtimeSync(data.table, data.eventType, data.record);
+                }
+            } catch {
+                // Ignore non-JSON heartbeat pings
+            }
+        };
+        sseConnection.onerror = () => {
+            // EventSource will automatically retry in background
+        };
+    } catch (e) {
+        console.warn("[Realtime SSE] Connection error:", e);
+    }
+}
+
 // Restore Session on Launch
 async function restoreSession() {
     const token = getToken();
@@ -969,6 +1370,7 @@ async function restoreSession() {
         showApp(user);
         showSection("dashboard");
         await refreshData();
+        initRealtime();
     } catch {
         clearSession();
         showAuth("login");
@@ -976,3 +1378,4 @@ async function restoreSession() {
 }
 
 restoreSession();
+initRealtime();
