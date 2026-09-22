@@ -52,6 +52,11 @@
     --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+html {
+    -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+}
+
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -63,8 +68,25 @@ body {
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    min-width: 320px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+img, svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+button, a, input, select, textarea {
+    touch-action: manipulation;
+}
+
+.sidebar-close-btn {
+    display: none;
 }
 
 .hidden { display: none !important; }
@@ -1265,62 +1287,6 @@ tbody tr:hover {
     display: block;
 }
 
-/* Media Queries for Responsiveness */
-@media (max-width: 980px) {
-    .auth-shell {
-        grid-template-columns: 1fr;
-    }
-    .auth-panel {
-        display: none;
-    }
-    .summary-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .report-summary-stats {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 800px) {
-    .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .sidebar.open {
-        transform: translateX(0);
-    }
-    .main-content {
-        margin-left: 0;
-    }
-    .menu-button {
-        display: grid;
-        place-items: center;
-    }
-    .header {
-        padding: 0 18px;
-    }
-    .page-container {
-        padding: 20px 16px;
-    }
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-    .page-heading {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .filter-area, .report-controls, .search-large {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .summary-grid {
-        grid-template-columns: 1fr;
-    }
-    .status-pill {
-        display: none;
-    }
-}
-
 /* AI Assistant for Analyzing Management Data Styles */
 .ai-presets-card {
     margin-bottom: 24px;
@@ -1678,6 +1644,516 @@ tbody tr:hover {
     border: 0;
     border-top: 1px solid var(--slate-200);
     margin: 20px 0;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN & MOBILE OPTIMIZATIONS
+   Breakpoints: 1024px (Tablet Landscape), 800px (Tablet Portrait), 
+                640px (Mobile Standard), 480px (Mobile Compact)
+   ========================================================================== */
+
+/* 1. Large Tablets & Small Laptops (<= 1024px) */
+@media (max-width: 1024px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+    .report-summary-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+    .auth-shell {
+        grid-template-columns: 1fr;
+        max-width: 540px;
+        margin: 0 auto;
+    }
+    .auth-panel {
+        display: none;
+    }
+}
+
+/* 2. Tablets & Mobile Drawer Navigation (<= 800px) */
+@media (max-width: 800px) {
+    /* Drawer Navigation */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        max-width: 85vw;
+        z-index: 100;
+        transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 10px 0 35px rgba(0, 0, 0, 0.25);
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    .sidebar-close-btn {
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: auto;
+        transition: var(--transition);
+        flex-shrink: 0;
+    }
+    .sidebar-close-btn:hover,
+    .sidebar-close-btn:active {
+        background: rgba(239, 68, 68, 0.25);
+        border-color: rgba(239, 68, 68, 0.5);
+    }
+    .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 95;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        display: block;
+    }
+    .overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+    .menu-button {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--slate-800);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .nav-item {
+        min-height: 44px;
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+    .logout-button {
+        min-height: 44px;
+    }
+
+    /* Header Compact on Tablet */
+    .header {
+        padding: 0 16px;
+        height: 64px;
+    }
+    .header-left {
+        gap: 10px;
+    }
+    .header-right {
+        gap: 10px;
+    }
+    .status-pill {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    /* Content Area & Cards */
+    .page-container {
+        padding: 20px 16px;
+    }
+    .page-heading {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+    .page-heading button {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+    }
+
+    /* Forms on Tablet & Mobile */
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+    .input-group input, 
+    .input-group select, 
+    .search-box input, 
+    .search-large input {
+        font-size: 16px; /* Crucial: Prevents iOS Safari auto-zoom on focus */
+        min-height: 44px;
+    }
+    .filter-area, 
+    .report-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .filter-area > *, 
+    .report-controls > * {
+        width: 100%;
+    }
+    .search-large {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .search-large button {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+    }
+
+    /* Tables: Fluid Horizontal Scroll with Fixed Minimum Width */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        margin-bottom: 4px;
+    }
+    table {
+        min-width: 620px;
+        width: 100%;
+    }
+    th, td {
+        padding: 12px 14px;
+    }
+    .table-action {
+        min-height: 36px;
+        min-width: 36px;
+        padding: 6px 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* AI Assistant Tablet Adjustments */
+    .ai-chip-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .ai-inquiry-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .ai-inquiry-box button {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+    }
+    .ai-content-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .ai-action-buttons {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .ai-action-buttons button {
+        flex: 1;
+        min-height: 40px;
+        justify-content: center;
+    }
+    .ai-metrics-bar {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+    }
+    .ai-metric-pill {
+        border-right: none;
+        border-bottom: 1px solid var(--slate-200);
+        padding-bottom: 8px;
+        padding-right: 0;
+    }
+    .ai-metric-pill:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    /* Reports Tablet Adjustments */
+    .report-header-box {
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+    }
+    .report-summary-stats {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 16px;
+    }
+    .report-actions-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .report-actions-bar button {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+    }
+}
+
+/* 3. Mobile Phones (<= 640px) */
+@media (max-width: 640px) {
+    /* Header Sizing & Typography */
+    .header {
+        height: 58px;
+        padding: 0 12px;
+    }
+    .breadcrumb::before {
+        display: none;
+    }
+    .breadcrumb {
+        font-size: 14px;
+        max-width: 135px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .profile-info {
+        display: none;
+    }
+    .profile {
+        padding-left: 0;
+        border-left: none;
+    }
+    .profile-avatar {
+        width: 34px;
+        height: 34px;
+        font-size: 12px;
+    }
+    .header-logout-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-height: 38px;
+    }
+    .header-logout-btn span:last-child {
+        display: none;
+    }
+    .status-pill {
+        display: none;
+    }
+
+    /* Page Layout & Spacing */
+    .page-container {
+        padding: 16px 12px;
+    }
+    .card {
+        padding: 16px 14px;
+        border-radius: var(--radius-md);
+        margin-bottom: 16px;
+    }
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 14px;
+        padding-bottom: 10px;
+    }
+    .card-header button {
+        align-self: flex-start;
+    }
+    .card-header h2 {
+        font-size: 17px;
+    }
+
+    /* High-Efficiency 2x2 Dashboard Metrics */
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .summary-card {
+        padding: 14px 12px;
+        border-radius: var(--radius-md);
+    }
+    .summary-card strong {
+        font-size: 24px;
+    }
+    .summary-card span {
+        font-size: 11px;
+    }
+    .summary-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+
+    /* 2-Column Touch Grid for Quick Actions */
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 18px;
+    }
+    .quick-action-btn {
+        width: 100%;
+        min-height: 44px;
+        padding: 10px 8px;
+        font-size: 12px;
+        justify-content: center;
+        text-align: center;
+    }
+
+    /* Symmetric Touch-Friendly Form Actions */
+    .form-actions {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+        width: 100%;
+        margin-top: 16px;
+    }
+    .form-actions > * {
+        flex: 1;
+        min-height: 44px;
+        justify-content: center;
+    }
+    .password-toggle {
+        min-width: 44px;
+        min-height: 44px;
+        display: grid;
+        place-items: center;
+    }
+
+    /* Mobile Authentication Card */
+    .auth-page {
+        padding: 12px 10px;
+        min-height: 100vh;
+    }
+    .auth-shell {
+        width: 100%;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+    }
+    .auth-card {
+        padding: 22px 16px;
+    }
+    .auth-header h2 {
+        font-size: 20px;
+    }
+    .auth-tabs {
+        padding: 3px;
+        margin-bottom: 16px;
+    }
+    .auth-tab-btn {
+        padding: 10px 6px;
+        font-size: 13px;
+        min-height: 42px;
+    }
+    .primary-button.full-button {
+        min-height: 46px;
+        font-size: 15px;
+    }
+
+    /* Mobile AI Assistant */
+    .ai-chip-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .ai-prompt-chip {
+        min-height: 44px;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    .ai-presets-card {
+        padding: 16px 14px;
+    }
+    .ai-empty-state {
+        padding: 32px 12px;
+    }
+    .ai-empty-icon {
+        font-size: 36px;
+    }
+
+    /* Centered Toast Notifications on Small Viewports */
+    .toast {
+        left: 12px;
+        right: 12px;
+        top: 12px;
+        max-width: calc(100% - 24px);
+        min-width: auto;
+    }
+}
+
+/* 4. Compact Mobile Viewports (<= 480px, e.g. iPhone SE) */
+@media (max-width: 480px) {
+    .page-heading h1 {
+        font-size: 21px;
+    }
+    .page-heading p {
+        font-size: 13px;
+    }
+    .auth-logo {
+        width: 36px;
+        height: 36px;
+        font-size: 15px;
+    }
+    .search-filter-pills {
+        gap: 6px;
+    }
+    .filter-pill {
+        min-height: 36px;
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+    .edit-banner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .edit-banner button {
+        align-self: flex-start;
+    }
+    th, td {
+        padding: 10px 10px;
+        font-size: 13px;
+    }
+    .type-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+    .code-badge {
+        font-size: 11px;
+        padding: 2px 4px;
+    }
+}
+
+/* 5. Touch Devices Specific Ergonomics */
+@media (hover: none) and (pointer: coarse) {
+    /* Prevent sticky hover backgrounds on touch tapping */
+    .quick-action-btn:hover,
+    .nav-item:hover,
+    .table-action:hover,
+    .filter-pill:hover,
+    .ai-prompt-chip:hover {
+        transform: none;
+    }
+    /* Provide crisp active response on tap */
+    .primary-button:active,
+    .secondary-button:active,
+    .danger-button:active,
+    .quick-action-btn:active,
+    .nav-item:active,
+    .filter-pill:active,
+    .ai-prompt-chip:active {
+        transform: scale(0.98);
+        transition: transform 0.08s ease;
+    }
 }
 
 /* Print Stylesheet for FR-06 Reports */

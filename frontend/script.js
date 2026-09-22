@@ -511,7 +511,14 @@ $("menuButton").addEventListener("click", () => {
     $("sidebar").classList.toggle("open");
     $("overlay").classList.toggle("active");
 });
+const sidebarCloseBtn = $("sidebarCloseBtn");
+if (sidebarCloseBtn) sidebarCloseBtn.addEventListener("click", closeSidebar);
 $("overlay").addEventListener("click", closeSidebar);
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && $("sidebar").classList.contains("open")) {
+        closeSidebar();
+    }
+});
 
 // Event Details Handlers (FR-01)
 $("showEventForm").addEventListener("click", () => {
