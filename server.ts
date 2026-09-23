@@ -1,11 +1,16 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import crypto from "crypto";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { GoogleGenAI } from "@google/genai";
 
-const FRONTEND_DIR = path.join(process.cwd(), "frontend");
+const FRONTEND_DIR = fs.existsSync(path.join(process.cwd(), "public", "index.html"))
+  ? path.join(process.cwd(), "public")
+  : fs.existsSync(path.join(process.cwd(), "frontend", "index.html"))
+  ? path.join(process.cwd(), "frontend")
+  : process.cwd();
 
 // Lazy initialization for Google Gemini API client
 let geminiClient: GoogleGenAI | null = null;
@@ -1360,7 +1365,7 @@ Please provide your comprehensive analysis based strictly on the data above.`;
 });
 
 // Health check endpoint
-app.get("/health", (_req: Request, res: Response) => {
+app.get(["/health", "/api/health"], (_req: Request, res: Response) => {
   res.json({
     status: "ok",
     database: supabase ? "supabase_postgresql" : "local_database_engine",
