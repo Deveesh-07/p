@@ -934,6 +934,25 @@ const db = {
     const highRegistrationEvents = [...events].sort((a, b) => b.registration_count - a.registration_count);
     const lowRegistrationEvents = [...upcomingEvents].sort((a, b) => a.registration_count - b.registration_count);
 
+    // Event breakdown with percentages
+    const totalRegs = registrations.length;
+    const eventBreakdown = events.map((e) => ({
+      code: e.code,
+      name: e.name,
+      date: e.event_date,
+      status: e.status,
+      registrationCount: e.registration_count,
+      sharePercent: totalRegs > 0 ? Math.round((e.registration_count / totalRegs) * 100) : 0,
+      details: e.details,
+    }));
+
+    // Department breakdown
+    const departmentBreakdown = Object.entries(deptCounts).map(([dept, count]) => ({
+      department: dept,
+      studentCount: count,
+      sharePercent: students.length > 0 ? Math.round((count / students.length) * 100) : 0,
+    })).sort((a, b) => b.studentCount - a.studentCount);
+
     return {
       totals: {
         events: events.length,
@@ -943,6 +962,8 @@ const db = {
         registrations: registrations.length,
       },
       departments: deptCounts,
+      eventBreakdown,
+      departmentBreakdown,
       events: events.map((e) => ({
         code: e.code,
         name: e.name,
@@ -1237,7 +1258,7 @@ app.get("/api/reports/:id", requireAuth, async (req: Request, res: Response) => 
   res.json(report);
 });
 
-// 8. AI Management Data Analysis Assistant (Powered by Gemini)
+// 8. AI Management Data Analysis Assistant (Powered by Gemini with Built-in Analytics Engine)
 app.post("/api/ai/analyze", requireAuth, async (req: Request, res: Response) => {
   try {
     const { query, focusArea } = req.body || {};
@@ -1250,58 +1271,75 @@ app.post("/api/ai/analyze", requireAuth, async (req: Request, res: Response) => 
     const hasApiKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 0);
     let textOutput = "";
 
-    if (!hasApiKey) {
-      // Deterministic analytical report based on live database statistics
-      const totalEvents = summary.totals.events;
-      const totalStudents = summary.totals.students;
-      const totalRegistrations = summary.totals.registrations;
+    const generateFallbackReport = () => {
+      const totals = summary?.totals || { events: 0, students: 0, registrations: 0, upcoming: 0, completed: 0 };
+      const totalEvents = totals.events || 0;
+      const totalStudents = totals.students || 0;
+      const totalRegistrations = totals.registrations || 0;
       const avgPerEvent = totalEvents > 0 ? (totalRegistrations / totalEvents).toFixed(1) : "0";
 
-      const eventLines = summary.eventBreakdown
-        .map((e: any) => `- **${e.name}** (${e.code}, ${e.date}): **${e.registrationCount}** registrations (${e.sharePercent}% of total)`)
+      const eventsList = summary?.eventBreakdown || (summary?.events || []).map((e: any) => ({
+        name: e.name,
+        code: e.code,
+        date: e.date,
+        registrationCount: e.registrations || 0,
+        sharePercent: totalRegistrations > 0 ? Math.round(((e.registrations || 0) / totalRegistrations) * 100) : 0,
+      }));
+
+      const eventLines = eventsList
+        .map((e: any) => `- **${e.name}** (\`${e.code}\`, ${e.date}): **${e.registrationCount ?? 0}** registered students (${e.sharePercent ?? 0}% of campus total)`)
         .join("\n");
 
-      const topDeptLines = summary.departmentBreakdown
-        .map((d: any) => `- **${d.department}**: **${d.studentCount}** registered students`)
+      const deptList = summary?.departmentBreakdown || Object.entries(summary?.departments || {}).map(([dept, count]: any) => ({
+        department: dept,
+        studentCount: count,
+        sharePercent: totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0,
+      }));
+
+      const topDeptLines = deptList
+        .map((d: any) => `- **${d.department}**: **${d.studentCount}** students enrolled (${d.sharePercent ?? 0}%)`)
         .join("\n");
 
-      textOutput = `### 🏛️ Institutional Executive Summary
+      return `### 🏛️ Executive Campus Operations Summary
 
-**Operational Snapshot:**
-- **Total Campus Events**: ${totalEvents}
-- **Total Registered Students**: ${totalStudents}
-- **Total Event Registrations**: ${totalRegistrations}
-- **Average Registrations per Event**: ${avgPerEvent}
-
----
-
-### 📊 Event Participation Breakdown
-${eventLines || "- No active event records found."}
+**Key Institutional Metrics:**
+- **Total Campus Events**: **${totalEvents}** (Upcoming: ${totals.upcoming || 0}, Completed: ${totals.completed || 0})
+- **Active Student Directory**: **${totalStudents}** registered students
+- **Total Event Registrations**: **${totalRegistrations}** confirmed bookings
+- **Average Enrollment per Event**: **${avgPerEvent}** students
 
 ---
 
-### 🎓 Department Engagement
-${topDeptLines || "- No departmental records logged."}
+### 📊 Event Attendance & Capacity Performance
+${eventLines || "- No campus events recorded in the database yet."}
 
 ---
 
-### ⚠️ Operational Observations & Capacity Assessment
-- Events with the highest engagement represent the primary focus of current campus enrollment.
-- Duplicate prevention rules are actively enforced across all departments to prevent duplicate bookings.
-- Continuous roster audits are recommended 48 hours prior to each event's scheduled date.
+### 🎓 Department Participation Ratios
+${topDeptLines || "- No departmental affiliations logged."}
 
 ---
 
-### 🎯 Strategic Recommendations
-1. **Targeted Department Outreach**: Promote under-enrolled event categories to departments with lower participation.
-2. **Capacity Monitoring**: Review event attendance thresholds for scheduled dates.
-3. **Automated Reminders**: Ensure registered students receive confirmation details prior to event commencement.
+### ⚠️ Risk Mitigation & Operational Insights
+1. **Attendance Distribution**: Events with highest engagement require venue verification and coordinator check-in stations.
+2. **Duplicate Prevention**: System actively enforces strict unique registration constraints to eliminate duplicate registrations.
+3. **Under-Enrolled Alerts**: Events with zero or low enrollment should be broadcasted to underrepresented academic departments.
 
-*(Note: Computed by internal institutional analytics engine. To enable Google Gemini AI synthesis, provide GEMINI_API_KEY in your environment settings).*`;
-    } else {
-      const ai = getGeminiClient();
+---
 
-      const systemPrompt = `You are a Senior Institutional Event Administrator and Data Analyst for a College Event Registration Management System.
+### 🎯 Strategic Coordinator Recommendations
+- **Targeted Outreach**: Direct promotional notices to academic departments with lower participation.
+- **Resource Allocation**: Scale seating and logistics based on the registration volume documented above.
+- **Roster Check**: Export printable event rosters 24 hours prior to event start time.
+
+*(Note: Computed by Institutional Analytics Engine based on real-time database records).*`;
+    };
+
+    if (hasApiKey) {
+      try {
+        const ai = getGeminiClient();
+
+        const systemPrompt = `You are a Senior Institutional Event Administrator and Data Analyst for a College Event Registration Management System.
 Your job is to analyze live campus registration and event records and provide an objective, data-driven, and actionable executive analysis.
 
 Guidelines:
@@ -1315,7 +1353,7 @@ Guidelines:
   5. **Strategic Action Items**: 3-4 concrete, prioritized recommendations for college coordinators.
 - Keep the tone professional, concise, constructive, and institutional.`;
 
-      const userPrompt = `Institutional Database Records:
+        const userPrompt = `Institutional Database Records:
 ${JSON.stringify(summary, null, 2)}
 
 Administrator Inquiry / Focus Area:
@@ -1324,29 +1362,30 @@ ${focusArea ? `Additional Focus Constraint: ${focusArea}` : ""}
 
 Please provide your comprehensive analysis based strictly on the data above.`;
 
-      const candidateModels = ["gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"];
-      let lastError: any = null;
+        const candidateModels = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"];
 
-      for (const model of candidateModels) {
-        try {
-          const response = await ai.models.generateContent({
-            model,
-            contents: userPrompt,
-            config: {
-              systemInstruction: systemPrompt,
-            },
-          });
-          textOutput = response.text || "";
-          if (textOutput) break;
-        } catch (modelErr: any) {
-          lastError = modelErr;
-          console.warn(`[Gemini API] Model ${model} unavailable: ${modelErr?.message || modelErr}, trying next model...`);
+        for (const model of candidateModels) {
+          try {
+            const response = await ai.models.generateContent({
+              model,
+              contents: userPrompt,
+              config: {
+                systemInstruction: systemPrompt,
+              },
+            });
+            textOutput = response.text || "";
+            if (textOutput) break;
+          } catch (modelErr: any) {
+            console.warn(`[Gemini API] Model ${model} unavailable: ${modelErr?.message || modelErr}, trying next model...`);
+          }
         }
+      } catch (geminiInitErr) {
+        console.warn("[Gemini API] Could not invoke Gemini client, falling back to institutional analytics engine:", geminiInitErr);
       }
+    }
 
-      if (!textOutput) {
-        throw lastError || new Error("AI models returned empty output.");
-      }
+    if (!textOutput) {
+      textOutput = generateFallbackReport();
     }
 
     res.json({
@@ -1358,9 +1397,8 @@ Please provide your comprehensive analysis based strictly on the data above.`;
       highlights: summary.highlights,
     });
   } catch (err: any) {
-    console.error("[Gemini API] Analysis error:", err);
-    const message = err?.message || "Failed to process AI management analysis.";
-    res.status(500).json({ detail: message });
+    console.error("[Analytics API] Unexpected error in /api/ai/analyze:", err);
+    res.status(500).json({ detail: err?.message || "Failed to process analytics." });
   }
 });
 
