@@ -1242,9 +1242,61 @@ app.post("/api/ai/analyze", requireAuth, async (req: Request, res: Response) => 
         : "Provide a comprehensive institutional management summary of all campus events, student enrollment, and capacity risks.";
 
     const summary = await db.getAnalyticsSummary();
-    const ai = getGeminiClient();
+    const hasApiKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 0);
+    let textOutput = "";
 
-    const systemPrompt = `You are a Senior Institutional Event Administrator and Data Analyst for a College Event Registration Management System.
+    if (!hasApiKey) {
+      // Deterministic analytical report based on live database statistics
+      const totalEvents = summary.totals.events;
+      const totalStudents = summary.totals.students;
+      const totalRegistrations = summary.totals.registrations;
+      const avgPerEvent = totalEvents > 0 ? (totalRegistrations / totalEvents).toFixed(1) : "0";
+
+      const eventLines = summary.eventBreakdown
+        .map((e: any) => `- **${e.name}** (${e.code}, ${e.date}): **${e.registrationCount}** registrations (${e.sharePercent}% of total)`)
+        .join("\n");
+
+      const topDeptLines = summary.departmentBreakdown
+        .map((d: any) => `- **${d.department}**: **${d.studentCount}** registered students`)
+        .join("\n");
+
+      textOutput = `### 🏛️ Institutional Executive Summary
+
+**Operational Snapshot:**
+- **Total Campus Events**: ${totalEvents}
+- **Total Registered Students**: ${totalStudents}
+- **Total Event Registrations**: ${totalRegistrations}
+- **Average Registrations per Event**: ${avgPerEvent}
+
+---
+
+### 📊 Event Participation Breakdown
+${eventLines || "- No active event records found."}
+
+---
+
+### 🎓 Department Engagement
+${topDeptLines || "- No departmental records logged."}
+
+---
+
+### ⚠️ Operational Observations & Capacity Assessment
+- Events with the highest engagement represent the primary focus of current campus enrollment.
+- Duplicate prevention rules are actively enforced across all departments to prevent duplicate bookings.
+- Continuous roster audits are recommended 48 hours prior to each event's scheduled date.
+
+---
+
+### 🎯 Strategic Recommendations
+1. **Targeted Department Outreach**: Promote under-enrolled event categories to departments with lower participation.
+2. **Capacity Monitoring**: Review event attendance thresholds for scheduled dates.
+3. **Automated Reminders**: Ensure registered students receive confirmation details prior to event commencement.
+
+*(Note: Computed by internal institutional analytics engine. To enable Google Gemini AI synthesis, provide GEMINI_API_KEY in your environment settings).*`;
+    } else {
+      const ai = getGeminiClient();
+
+      const systemPrompt = `You are a Senior Institutional Event Administrator and Data Analyst for a College Event Registration Management System.
 Your job is to analyze live campus registration and event records and provide an objective, data-driven, and actionable executive analysis.
 
 Guidelines:
@@ -1258,7 +1310,7 @@ Guidelines:
   5. **Strategic Action Items**: 3-4 concrete, prioritized recommendations for college coordinators.
 - Keep the tone professional, concise, constructive, and institutional.`;
 
-    const userPrompt = `Institutional Database Records:
+      const userPrompt = `Institutional Database Records:
 ${JSON.stringify(summary, null, 2)}
 
 Administrator Inquiry / Focus Area:
@@ -1267,29 +1319,29 @@ ${focusArea ? `Additional Focus Constraint: ${focusArea}` : ""}
 
 Please provide your comprehensive analysis based strictly on the data above.`;
 
-    let textOutput = "";
-    const candidateModels = ["gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"];
-    let lastError: any = null;
+      const candidateModels = ["gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"];
+      let lastError: any = null;
 
-    for (const model of candidateModels) {
-      try {
-        const response = await ai.models.generateContent({
-          model,
-          contents: userPrompt,
-          config: {
-            systemInstruction: systemPrompt,
-          },
-        });
-        textOutput = response.text || "";
-        if (textOutput) break;
-      } catch (modelErr: any) {
-        lastError = modelErr;
-        console.warn(`[Gemini API] Model ${model} unavailable: ${modelErr?.message || modelErr}, trying next model...`);
+      for (const model of candidateModels) {
+        try {
+          const response = await ai.models.generateContent({
+            model,
+            contents: userPrompt,
+            config: {
+              systemInstruction: systemPrompt,
+            },
+          });
+          textOutput = response.text || "";
+          if (textOutput) break;
+        } catch (modelErr: any) {
+          lastError = modelErr;
+          console.warn(`[Gemini API] Model ${model} unavailable: ${modelErr?.message || modelErr}, trying next model...`);
+        }
       }
-    }
 
-    if (!textOutput) {
-      throw lastError || new Error("AI models returned empty output.");
+      if (!textOutput) {
+        throw lastError || new Error("AI models returned empty output.");
+      }
     }
 
     res.json({
