@@ -1375,38 +1375,43 @@ app.use((req: Request, res: Response) => {
   res.sendFile(path.join(FRONTEND_DIR, "index.html"));
 });
 
-const PORT = parseInt(process.env.PORT || "3000", 10);
-const server = app.listen(PORT, "0.0.0.0", () => {
-  console.log(`College Event Registration Management System running on http://0.0.0.0:${PORT}`);
-});
-
-// Graceful shutdown handling for containerized production environments (Cloud Run, Docker, Kubernetes)
-function gracefulShutdown(signal: string) {
-  console.log(`[Server] Received ${signal}. Starting graceful shutdown...`);
-  for (const client of sseClients) {
-    try {
-      client.write("event: shutdown\ndata: {}\n\n");
-      client.end();
-    } catch {}
-  }
-  sseClients.clear();
-
-  if (serverRealtimeChannel && supabase) {
-    try {
-      supabase.removeChannel(serverRealtimeChannel);
-    } catch {}
-  }
-
-  server.close(() => {
-    console.log("[Server] HTTP server closed cleanly. Exiting process.");
-    process.exit(0);
+if (!process.env.VERCEL) {
+  const PORT = parseInt(process.env.PORT || "3000", 10);
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`College Event Registration Management System running on http://0.0.0.0:${PORT}`);
   });
 
-  setTimeout(() => {
-    console.error("[Server] Forced shutdown after timeout.");
-    process.exit(1);
-  }, 10000).unref();
+  // Graceful shutdown handling for containerized production environments (Cloud Run, Docker, Kubernetes)
+  const gracefulShutdown = (signal: string) => {
+    console.log(`[Server] Received ${signal}. Starting graceful shutdown...`);
+    for (const client of sseClients) {
+      try {
+        client.write("event: shutdown\ndata: {}\n\n");
+        client.end();
+      } catch {}
+    }
+    sseClients.clear();
+
+    if (serverRealtimeChannel && supabase) {
+      try {
+        supabase.removeChannel(serverRealtimeChannel);
+      } catch {}
+    }
+
+    server.close(() => {
+      console.log("[Server] HTTP server closed cleanly. Exiting process.");
+      process.exit(0);
+    });
+
+    setTimeout(() => {
+      console.error("[Server] Forced shutdown after timeout.");
+      process.exit(1);
+    }, 10000).unref();
+  };
+
+  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 }
 
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+export { app };
+export default app;

@@ -143,7 +143,18 @@ docker compose up -d
    ```
 2. Cloud Run automatically assigns HTTPS and injects `PORT=8080`.
 
-### Option 3: Render / Railway / PaaS
+### Option 3: Vercel Deployment
+
+1. Go to [vercel.com](https://vercel.com) and log in with GitHub.
+2. Click **"Add New..."** -> **"Project"**.
+3. Select your repository `Deveesh-07/p` and click **Import**.
+4. In **Environment Variables**, add:
+   - `SUPABASE_URL` = `https://your-id.supabase.co`
+   - `SUPABASE_ANON_KEY` = `your-supabase-anon-key`
+   - `GEMINI_API_KEY` = `your-gemini-api-key`
+5. Click **Deploy**. Vercel will automatically build the serverless API (`api/index.ts`) and serve the frontend at global edge via `vercel.json` rewrites.
+
+### Option 4: Render / Railway / PaaS
 
 1. Create a new **Web Service** and connect repository `https://github.com/Deveesh-07/p.git`.
 2. Configure settings:
